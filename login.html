@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login | CloudMatch</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Geist', system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      background: linear-gradient(135deg, #0d0f0e 0%, #151918 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 420px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: #151918;
+      border: 1px solid rgba(255, 255, 255, 0.11);
+      border-radius: 1.5rem;
+      padding: 2rem 1.8rem 2.2rem;
+      box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.5);
+    }
+
+    h2 {
+      font-size: 1.8rem;
+      font-weight: 600;
+      background: linear-gradient(135deg, #6ee7a0, #3dd68c);
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+      margin-bottom: 1.8rem;
+      text-align: center;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 0.9rem 1rem;
+      margin-bottom: 1.2rem;
+      border: 1.5px solid rgba(255, 255, 255, 0.11);
+      border-radius: 1rem;
+      font-size: 1rem;
+      transition: all 0.2s;
+      background: #1c2220;
+      color: #e8ede9;
+      outline: none;
+    }
+
+    input:focus, select:focus {
+      border-color: #6ee7a0;
+      box-shadow: 0 0 0 3px rgba(110, 231, 160, 0.2);
+      background: #222926;
+    }
+
+    input::placeholder {
+      color: #7a8c82;
+    }
+
+    button {
+      width: 100%;
+      padding: 0.9rem;
+      background: linear-gradient(135deg, #6ee7a0, #3dd68c);
+      color: #0d0f0e;
+      border: none;
+      border-radius: 1rem;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 0.4rem;
+      margin-bottom: 1rem;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      opacity: 0.9;
+    }
+
+    .suggest-btn {
+      background: #334155;
+      color: white;
+      margin-top: -0.2rem;
+      margin-bottom: 1rem;
+    }
+
+    .suggest-btn:hover {
+      background: #1e293b;
+    }
+
+    .hint {
+      display: block;
+      font-size: 0.7rem;
+      color: #7a8c82;
+      margin-top: -0.8rem;
+      margin-bottom: 1rem;
+    }
+
+    p {
+      text-align: center;
+      color: #7a8c82;
+      font-size: 0.9rem;
+      margin-top: 0.8rem;
+    }
+
+    a {
+      color: #6ee7a0;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .error-msg {
+      color: #f0827a;
+      font-size: 0.75rem;
+      margin-top: -0.5rem;
+      margin-bottom: 0.8rem;
+      text-align: left;
+    }
+
+    .switch-link {
+      cursor: pointer;
+    }
+
+    .logo {
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+
+    .logo span {
+      font-family: 'Fraunces', serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #e8ede9;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <!-- LOGIN CARD -->
+  <div id="loginCard" class="card">
+    <div class="logo">
+      <span>☁️ CloudMatch</span>
+    </div>
+    <h2>Welcome Back</h2>
+    <input type="email" id="loginEmail" placeholder="Email address" autocomplete="email">
+    <input type="password" id="loginPassword" placeholder="Password" autocomplete="current-password">
+    <button onclick="handleLogin()">Sign In →</button>
+    <p>New here? <a href="#" onclick="switchToSignup()" class="switch-link">Create account</a></p>
+    <p style="margin-top: 1rem;"><a href="/">← Back to Home</a></p>
+  </div>
+
+  <!-- SIGNUP CARD (hidden by default) -->
+  <div id="signupCard" class="card" style="display: none;">
+    <div class="logo">
+      <span>☁️ CloudMatch</span>
+    </div>
+    <h2>Create Account</h2>
+    <input type="text" id="signupName" placeholder="Full Name" autocomplete="name">
+    <input type="email" id="signupEmail" placeholder="Email address" autocomplete="email">
+    <input type="password" id="signupPassword" placeholder="Password" autocomplete="new-password">
+    <small class="hint">🔒 Password: min 4 chars, 1 uppercase, 1 number, 1 special (@$!%*?&)</small>
+    
+    <button type="button" class="suggest-btn" onclick="generateStrongPassword()">✨ Suggest strong password</button>
+    
+    <select id="signupRole">
+      <option value="" disabled selected>— Select your role —</option>
+      <option value="Student">🎓 Student</option>
+      <option value="Developer">💻 Developer</option>
+      <option value="Enterprise">🏢 Enterprise</option>
+    </select>
+    
+    <button onclick="handleSignup()">Register →</button>
+    <p>Already have an account? <a href="#" onclick="switchToLogin()" class="switch-link">Sign in</a></p>
+    <p style="margin-top: 1rem;"><a href="/">← Back to Home</a></p>
+  </div>
+</div>
+
+<script>
+  // Helper: get user from localStorage
+  function getUserByEmail(email) {
+    if (!email) return null;
+    const raw = localStorage.getItem(`user_${email.toLowerCase()}`);
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw);
+    } catch(e) {
+      return null;
+    }
+  }
+
+  // Save user to localStorage
+  function saveUser(email, userData) {
+    localStorage.setItem(`user_${email.toLowerCase()}`, JSON.stringify(userData));
+  }
+
+  // Password validation
+  function isValidPassword(password) {
+    const regex = /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{4,}$/;
+    return regex.test(password);
+  }
+
+  // Generate strong password
+  function generateStrongPassword() {
+    const upperSet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const lowerSet = "abcdefghijklmnopqrstuvwxyz";
+    const numberSet = "0123456789";
+    const specialSet = "@$!%*?&";
+    
+    let password = "";
+    password += upperSet[Math.floor(Math.random() * upperSet.length)];
+    password += numberSet[Math.floor(Math.random() * numberSet.length)];
+    password += specialSet[Math.floor(Math.random() * specialSet.length)];
+    
+    const allChars = upperSet + lowerSet + numberSet + specialSet;
+    const remainingLength = 6 + Math.floor(Math.random() * 3);
+    for (let i = 0; i < remainingLength; i++) {
+      password += allChars[Math.floor(Math.random() * allChars.length)];
+    }
+    password = password.split('').sort(() => Math.random() - 0.5).join('');
+    
+    const pwdField = document.getElementById("signupPassword");
+    if (pwdField) pwdField.value = password;
+  }
+
+  // UI Toggle functions
+  function switchToSignup() {
+    document.getElementById("loginCard").style.display = "none";
+    document.getElementById("signupCard").style.display = "block";
+  }
+
+  function switchToLogin() {
+    document.getElementById("signupCard").style.display = "none";
+    document.getElementById("loginCard").style.display = "block";
+  }
+
+  function showLoginError(message) {
+    const loginCard = document.getElementById("loginCard");
+    const existingErr = loginCard.querySelector(".error-msg");
+    if (existingErr) existingErr.remove();
+    const loginBtn = loginCard.querySelector("button");
+    const errorDiv = document.createElement("div");
+    errorDiv.className = "error-msg";
+    errorDiv.innerText = message;
+    loginBtn.parentNode.insertBefore(errorDiv, loginBtn);
+    setTimeout(() => { if(errorDiv) errorDiv.remove(); }, 3000);
+  }
+
+  function showSignupError(message) {
+    const signupCard = document.getElementById("signupCard");
+    const existingErr = signupCard.querySelector(".error-msg");
+    if (existingErr) existingErr.remove();
+    const signupBtn = signupCard.querySelector("button:last-of-type");
+    const errorDiv = document.createElement("div");
+    errorDiv.className = "error-msg";
+    errorDiv.innerText = message;
+    signupBtn.parentNode.insertBefore(errorDiv, signupBtn);
+    setTimeout(() => { if(errorDiv) errorDiv.remove(); }, 3000);
+  }
+
+  // SIGNUP FUNCTION
+  // SIGNUP FUNCTION
+  // SIGNUP FUNCTION
+  async function handleSignup() {
+    const name     = document.getElementById("signupName").value.trim();
+    const email    = document.getElementById("signupEmail").value.trim();
+    const password = document.getElementById("signupPassword").value;
+    const role     = document.getElementById("signupRole").value;
+
+    if (!name)     { showSignupError("❌ Please enter your full name."); return; }
+    if (!email)    { showSignupError("❌ Email address is required."); return; }
+    if (!password) { showSignupError("❌ Please enter a password."); return; }
+    if (!role)     { showSignupError("❌ Please select a role."); return; }
+
+    const emailPattern = /^[^\s@]+@([^\s@.,]+\.)+[^\s@.,]{2,}$/;
+    if (!emailPattern.test(email)) {
+      showSignupError("📧 Please enter a valid email address."); return;
+    }
+    if (!isValidPassword(password)) {
+      showSignupError("🔐 Weak password! Min 4 chars, 1 uppercase, 1 number, 1 special (@$!%*?&)"); return;
+    }
+
+    try {
+      const res  = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password, role })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert("✅ Account created! Please log in.");
+        switchToLogin();
+        document.getElementById("loginEmail").value = email;
+        document.getElementById("loginPassword").value = "";
+      } else {
+        showSignupError("⚠️ " + data.error);
+      }
+    } catch(e) {
+      showSignupError("❌ Server error. Is Flask running?");
+    }
+  }
+  // LOGIN FUNCTION
+  // LOGIN FUNCTION
+  // LOGIN FUNCTION
+  async function handleLogin() {
+    const email    = document.getElementById("loginEmail").value.trim();
+    const password = document.getElementById("loginPassword").value;
+
+    if (!email)    { showLoginError("✉️ Please enter your email address."); return; }
+    if (!password) { showLoginError("🔑 Please enter your password."); return; }
+
+    try {
+      const res  = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(`✅ Welcome back, ${data.user.name}!`);
+        window.location.href = "/";
+      } else {
+        showLoginError("❌ " + data.error);
+      }
+    } catch(e) {
+      showLoginError("❌ Server error. Is Flask running?");
+    }
+  }
+  // Enter key support
+  function attachEnterListeners() {
+    const loginPwd = document.getElementById("loginPassword");
+    if (loginPwd) {
+      loginPwd.addEventListener("keypress", function(e) {
+        if (e.key === "Enter") handleLogin();
+      });
+    }
+    const signupPwd = document.getElementById("signupPassword");
+    if (signupPwd) {
+      signupPwd.addEventListener("keypress", function(e) {
+        if (e.key === "Enter") handleSignup();
+      });
+    }
+  }
+
+  // Expose functions globally
+  window.handleLogin = handleLogin;
+  window.handleSignup = handleSignup;
+  window.switchToLogin = switchToLogin;
+  window.switchToSignup = switchToSignup;
+  window.generateStrongPassword = generateStrongPassword;
+
+  // Auto-switch to signup if URL has #signup hash
+  if (window.location.hash === '#signup') {
+    switchToSignup();
+  }
+
+  // Initialize
+  attachEnterListeners();
+</script>
+</body>
+</html>

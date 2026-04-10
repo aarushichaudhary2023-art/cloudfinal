@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CloudMatch — Vendor Recommendation System</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,700;1,9..144,300&family=Geist+Mono:wght@400;500&family=Geist:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#0d0f0e;--surface:#151918;--surface2:#1c2220;--surface3:#222926;--border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.11);--text:#e8ede9;--muted:#7a8c82;--muted2:#556259;--accent:#6ee7a0;--accent2:#3dd68c;--gold:#e8c87a;--rose:#f0827a;--c-aws:#e8943a;--c-gcp:#7ac8e8;--c-azure:#b0a0e8;--c-do:#6ee7a0;--radar-grid:rgba(255,255,255,0.05);--chart-tick:#556259;--chart-grid:rgba(255,255,255,0.04)}
+    html.light{--bg:#f0f4f1;--surface:#ffffff;--surface2:#e8ede9;--surface3:#dde4df;--border:rgba(0,0,0,0.07);--border2:rgba(0,0,0,0.13);--text:#0d1f14;--muted:#4a6b56;--muted2:#7a9c84;--accent:#1e9a54;--accent2:#178a47;--gold:#a07010;--rose:#c0403a;--c-aws:#c06010;--c-gcp:#1a7aaa;--c-azure:#5040b0;--c-do:#1e9a54;--radar-grid:rgba(0,0,0,0.07);--chart-tick:#7a9c84;--chart-grid:rgba(0,0,0,0.05)}
+    html{scroll-behavior:smooth}
+    body{font-family:'Geist',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;transition:background .3s,color .3s}
+
+    /* HEADER */
+    .site-header{position:fixed;top:0;left:0;right:0;z-index:1000;background:var(--surface);border-bottom:1px solid var(--border2);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);transition:background .3s,border-color .3s}
+    .header-inner{max-width:1160px;margin:0 auto;padding:0 1.5rem;height:58px;display:flex;align-items:center;justify-content:space-between;gap:2rem}
+    .logo{display:flex;align-items:center;gap:10px;text-decoration:none;flex-shrink:0}
+    .logo-mark{width:32px;height:32px;border-radius:8px;background:var(--accent);display:flex;align-items:center;justify-content:center;transition:background .3s}
+    .logo-mark svg{width:18px;height:18px}
+    .logo-text{font-family:'Fraunces',serif;font-size:1.1rem;font-weight:700;color:var(--text);letter-spacing:-0.02em;line-height:1}
+    .logo-sub{font-family:'Geist Mono',monospace;font-size:9px;color:var(--muted2);letter-spacing:.1em;text-transform:uppercase;display:block;margin-top:2px}
+    .nav-links{display:flex;align-items:center;gap:0;list-style:none}
+    .nav-links li a{display:block;padding:6px 14px;font-size:13px;font-weight:400;color:var(--muted);text-decoration:none;border-radius:6px;transition:color .15s,background .15s;white-space:nowrap}
+    .nav-links li a:hover{color:var(--text);background:var(--surface2)}
+    .nav-links li a.active{color:var(--accent)}
+    .nav-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
+    .nav-badge{font-family:'Geist Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);border:1px solid rgba(110,231,160,0.3);border-radius:4px;padding:3px 8px;transition:color .3s,border-color .3s}
+    html.light .nav-badge{border-color:rgba(30,154,84,0.3)}
+    .theme-toggle{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border2);border-radius:999px;padding:5px 12px 5px 8px;cursor:pointer;transition:all .2s;font-family:'Geist',sans-serif;font-size:12px;font-weight:500;color:var(--muted);outline:none}
+    .theme-toggle:hover{border-color:var(--accent);color:var(--accent)}
+    .toggle-track{width:34px;height:18px;background:var(--surface3);border-radius:999px;border:1px solid var(--border2);position:relative;transition:background .25s;flex-shrink:0}
+    html.light .toggle-track{background:var(--accent);border-color:var(--accent)}
+    .toggle-thumb{position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:var(--muted);transition:transform .25s,background .25s}
+    html.light .toggle-thumb{transform:translateX(16px);background:#fff}
+    .toggle-label{font-size:10px;letter-spacing:.08em;text-transform:uppercase;font-family:'Geist Mono',monospace}
+    @media(max-width:680px){.nav-links,.nav-badge{display:none}}
+
+    /* HERO */
+    .hero{padding:8rem 2rem 3.5rem;text-align:center;position:relative}
+    .hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 40% at 30% 20%,rgba(110,231,160,.07) 0%,transparent 60%),radial-gradient(ellipse 50% 35% at 70% 60%,rgba(176,160,232,.06) 0%,transparent 60%);pointer-events:none}
+    html.light .hero::before{background:radial-gradient(ellipse 60% 40% at 30% 20%,rgba(30,154,84,.06) 0%,transparent 60%),radial-gradient(ellipse 50% 35% at 70% 60%,rgba(80,64,176,.05) 0%,transparent 60%)}
+    .hero-eyebrow{display:inline-block;font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);border:1px solid rgba(110,231,160,.25);border-radius:4px;padding:4px 12px;margin-bottom:1.8rem;transition:color .3s,border-color .3s}
+    html.light .hero-eyebrow{border-color:rgba(30,154,84,.3)}
+    .hero h1{font-family:'Fraunces',serif;font-size:clamp(2.6rem,5.5vw,4.5rem);font-weight:700;line-height:1.08;letter-spacing:-.025em;margin-bottom:1.2rem;color:var(--text)}
+    .hero h1 em{font-style:italic;font-weight:300;color:var(--accent)}
+    .hero p{font-size:1rem;color:var(--muted);max-width:480px;margin:0 auto 2.8rem;line-height:1.7;font-weight:300}
+    .vendor-strip{display:flex;justify-content:center;border:1px solid var(--border2);border-radius:10px;overflow:hidden;max-width:560px;margin:0 auto 3.5rem;transition:border-color .3s}
+    .vendor-tab{flex:1;padding:10px 14px;display:flex;align-items:center;gap:8px;font-size:12px;font-weight:500;color:var(--muted);border-right:1px solid var(--border2);background:var(--surface);justify-content:center;white-space:nowrap;transition:background .3s,color .3s,border-color .3s}
+    .vendor-tab:last-child{border-right:none}
+    .vendor-bar{width:3px;height:14px;border-radius:2px;flex-shrink:0}
+
+    /* MAIN */
+    .main{max-width:1160px;margin:0 auto;padding:0 1.5rem 5rem}
+
+    /* WIZARD */
+    .wizard{background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:2.5rem;margin-bottom:2rem;transition:background .3s,border-color .3s}
+    .wizard-header{margin-bottom:2rem}
+    .wizard-header h2{font-family:'Fraunces',serif;font-size:1.5rem;font-weight:500;margin-bottom:.3rem}
+    .wizard-header p{font-size:.875rem;color:var(--muted);font-weight:300}
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem}
+    @media(max-width:660px){.form-grid{grid-template-columns:1fr}}
+    .form-group{display:flex;flex-direction:column;gap:7px}
+    .form-group label{font-family:'Geist Mono',monospace;font-size:10.5px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
+    .form-group select,.form-group input[type="number"]{background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:9px 12px;color:var(--text);font-family:'Geist',sans-serif;font-size:14px;outline:none;transition:border-color .15s,background .3s,color .3s;-webkit-appearance:none}
+    .form-group select:focus,.form-group input:focus{border-color:var(--accent)}
+    .form-group select option{background:var(--surface2);color:var(--text)}
+    .weight-group{grid-column:1/-1;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:1.5rem;transition:background .3s,border-color .3s}
+    .weight-group-label{font-family:'Geist Mono',monospace;font-size:10px;color:var(--muted2);text-transform:uppercase;letter-spacing:.12em;margin-bottom:1.2rem}
+    .weights-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem}
+    .weight-item label{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted);margin-bottom:5px}
+    .weight-val{font-family:'Geist Mono',monospace;font-size:11px;color:var(--accent)}
+    .weight-item input[type="range"]{width:100%;accent-color:var(--accent);cursor:pointer}
+    .checkbox-group{display:flex;flex-wrap:wrap;gap:7px}
+    .check-pill{padding:5px 12px;border:1px solid var(--border2);border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;transition:all .18s;user-select:none;color:var(--muted);background:var(--surface2);font-family:'Geist Mono',monospace;text-transform:uppercase;letter-spacing:.04em}
+    .check-pill:hover{border-color:var(--accent);color:var(--text)}
+    .check-pill.active{border-color:var(--accent);background:rgba(110,231,160,.1);color:var(--accent);box-shadow:0 0 0 1px rgba(110,231,160,.15)}
+    html.light .check-pill.active{background:rgba(30,154,84,.1);box-shadow:0 0 0 1px rgba(30,154,84,.2)}
+    .check-pill input{display:none}
+    .btn-analyze{display:flex;align-items:center;gap:10px;justify-content:center;background:var(--accent);color:#0d0f0e;border:none;border-radius:10px;padding:13px 32px;font-size:14px;font-weight:600;font-family:'Geist',sans-serif;cursor:pointer;transition:all .15s;width:100%;margin-top:1.5rem;letter-spacing:.01em}
+    html.light .btn-analyze{color:#fff}
+    .btn-analyze:hover{background:var(--accent2)}
+    .btn-analyze:active{transform:scale(.99)}
+    .btn-analyze:disabled{opacity:.45;cursor:not-allowed;transform:none}
+
+    /* LOADING */
+    .loading{display:none;text-align:center;padding:4rem 2rem}
+    .loading.active{display:block}
+    .loader-track{width:44px;height:44px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .75s linear infinite;margin:0 auto 1.2rem}
+    .loading p{font-size:13px;color:var(--muted);font-weight:300}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    /* RESULTS */
+    .results{display:none}
+    .results.active{display:block}
+    .results-header{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:1.8rem;flex-wrap:wrap;gap:1rem}
+    .results-header h2{font-family:'Fraunces',serif;font-size:1.6rem;font-weight:500}
+    .top-badge{font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:.08em;color:var(--gold);border:1px solid rgba(232,200,122,.3);border-radius:4px;padding:4px 10px;text-transform:uppercase}
+    html.light .top-badge{border-color:rgba(160,112,16,.3)}
+    .cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:1rem;margin-bottom:2rem}
+    .vendor-card{background:var(--surface);border:1px solid var(--border2);border-radius:14px;overflow:hidden;position:relative;transition:transform .18s,border-color .18s,background .3s;display:flex;flex-direction:column}
+    .vendor-card:hover{transform:translateY(-2px);border-color:rgba(110,231,160,.35)}
+    html.light .vendor-card:hover{border-color:rgba(30,154,84,.4)}
+    .vendor-card.top-card{border-color:rgba(110,231,160,.3)}
+    html.light .vendor-card.top-card{border-color:rgba(30,154,84,.35)}
+    .card-stripe{height:4px;width:100%;flex-shrink:0}
+    .card-body{padding:1.25rem;flex:1;display:flex;flex-direction:column}
+    .card-rank-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:.9rem}
+    .card-rank{font-family:'Geist Mono',monospace;font-size:10px;color:var(--muted2);letter-spacing:.1em;text-transform:uppercase}
+    .card-rank.is-top{color:var(--accent)}
+    .vendor-logo-tag{font-family:'Geist Mono',monospace;font-size:10px;font-weight:500;padding:2px 8px;border-radius:4px;letter-spacing:.08em}
+    .card-name{font-family:'Fraunces',serif;font-size:1.1rem;font-weight:500;margin-bottom:.2rem;line-height:1.2}
+    .card-tagline{font-size:11.5px;color:var(--muted);font-weight:300;margin-bottom:1rem;line-height:1.4}
+    .score-block{margin-bottom:1rem}
+    .score-top-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+    .score-lbl{font-family:'Geist Mono',monospace;font-size:10px;color:var(--muted2);letter-spacing:.08em;text-transform:uppercase}
+    .score-num{font-family:'Fraunces',serif;font-size:1.6rem;font-weight:700;line-height:1}
+    .score-denom{font-family:'Geist',sans-serif;font-size:11px;color:var(--muted2);margin-left:1px}
+    .score-track{height:3px;background:var(--surface3);border-radius:2px;overflow:hidden}
+    .score-fill{height:100%;border-radius:2px;transition:width 1s cubic-bezier(.25,1,.5,1)}
+    .card-tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:1rem}
+    .tag{font-size:10.5px;padding:3px 8px;border-radius:4px;font-weight:400;line-height:1.4}
+    .tag-s{background:rgba(110,231,160,.08);color:var(--accent);border:1px solid rgba(110,231,160,.15)}
+    .tag-w{background:rgba(240,130,122,.08);color:var(--rose);border:1px solid rgba(240,130,122,.15)}
+    html.light .tag-s{background:rgba(30,154,84,.08);border-color:rgba(30,154,84,.2)}
+    html.light .tag-w{background:rgba(192,64,58,.08);border-color:rgba(192,64,58,.2)}
+    .card-footer{margin-top:auto;padding-top:.9rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-end}
+    .cost-lbl{font-family:'Geist Mono',monospace;font-size:10px;color:var(--muted2);text-transform:uppercase;letter-spacing:.08em}
+    .cost-amount{text-align:right}
+    .cost-num{font-family:'Fraunces',serif;font-size:1.35rem;font-weight:500;display:block;line-height:1}
+    .cost-sub{font-size:10px;color:var(--muted2);font-family:'Geist',sans-serif}
+    .recommend-stripe{height:2px;background:var(--accent)}
+
+    /* ANALYSIS */
+    .analysis-section{background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:2rem;margin-bottom:2rem;transition:background .3s,border-color .3s}
+    .tabs{display:flex;margin-bottom:2rem;border-bottom:1px solid var(--border2)}
+    .tab-btn{padding:8px 16px;border:none;background:transparent;color:var(--muted);font-size:13px;font-weight:400;font-family:'Geist',sans-serif;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s}
+    .tab-btn:hover{color:var(--text)}
+    .tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+    .tab-content{display:none}
+    .tab-content.active{display:block}
+    .section-title{font-family:'Fraunces',serif;font-size:1.05rem;font-weight:500;margin-bottom:1.2rem}
+    .analysis-item{padding:.85rem 1rem;border-left:2px solid var(--accent);background:rgba(110,231,160,.04);border-radius:0 8px 8px 0;margin-bottom:.7rem;font-size:13.5px;color:var(--muted);line-height:1.6;font-weight:300}
+    html.light .analysis-item{background:rgba(30,154,84,.05)}
+    .chart-wrap{display:grid;grid-template-columns:1fr 1fr;gap:2rem;align-items:start}
+    @media(max-width:660px){.chart-wrap{grid-template-columns:1fr}}
+    canvas{max-width:100%}
+    .feature-table{width:100%;border-collapse:collapse;font-size:13px}
+    .feature-table th{text-align:left;padding:9px 12px;color:var(--muted2);font-family:'Geist Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.1em;border-bottom:1px solid var(--border);font-weight:400}
+    .feature-table td{padding:9px 12px;border-bottom:1px solid var(--border);color:var(--muted)}
+    .feature-table tr:last-child td{border-bottom:none}
+    .check-yes{color:var(--accent);font-weight:600}
+    .check-no{color:var(--muted2)}
+    .reset-btn{display:block;margin:0 auto;background:transparent;border:1px solid var(--border2);color:var(--muted);border-radius:8px;padding:9px 24px;font-size:13px;font-family:'Geist',sans-serif;cursor:pointer;transition:all .15s}
+    .export-btn{background:var(--surface2);border:1px solid var(--border2);color:var(--muted);border-radius:6px;padding:5px 12px;font-size:11px;font-family:'Geist Mono',monospace;cursor:pointer;transition:all .15s;letter-spacing:.04em}
+    .export-btn:hover{border-color:var(--accent);color:var(--accent)}
+    .pricing-tag{font-family:'Geist Mono',monospace;font-size:10px;color:var(--muted2);border:1px solid var(--border);border-radius:4px;padding:3px 8px;letter-spacing:.05em}
+    .reset-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+    /* FOOTER — fixed layout */
+    .site-footer{background:var(--surface);border-top:1px solid var(--border2);margin-top:4rem;transition:background .3s,border-color .3s}
+    .footer-top{max-width:1160px;margin:0 auto;padding:3rem 1.5rem 2.5rem;display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;gap:2.5rem}
+    @media(max-width:860px){.footer-top{grid-template-columns:1fr 1fr}}
+    @media(max-width:520px){.footer-top{grid-template-columns:1fr}}
+    .footer-brand p{font-size:13px;color:var(--muted);line-height:1.7;font-weight:300;max-width:260px;margin:1rem 0 1.4rem}
+    .api-status{display:inline-flex;align-items:center;gap:7px;font-family:'Geist Mono',monospace;font-size:10.5px;color:var(--muted);background:var(--surface2);border:1px solid var(--border2);border-radius:6px;padding:5px 10px;letter-spacing:.05em;transition:background .3s,border-color .3s}
+    .status-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0;animation:pulse 2.4s ease-in-out infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+    .footer-col h4{font-family:'Geist Mono',monospace;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.14em;color:var(--muted2);margin-bottom:1rem}
+    .footer-col ul{list-style:none;display:flex;flex-direction:column;gap:8px}
+    .footer-col ul li a{font-size:13px;color:var(--muted);text-decoration:none;transition:color .15s;font-weight:300}
+    .footer-col ul li a:hover{color:var(--accent)}
+    .footer-vendors{display:flex;flex-direction:column;gap:8px}
+    .footer-vendor-item{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);font-weight:300}
+    .fv-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+    .footer-divider{max-width:1160px;margin:0 auto;border:none;border-top:1px solid var(--border)}
+    .footer-bottom{max-width:1160px;margin:0 auto;padding:1.2rem 1.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.8rem}
+    .footer-copy{font-family:'Geist Mono',monospace;font-size:11px;color:var(--muted2);letter-spacing:.04em}
+    .footer-links-row{display:flex;align-items:center;gap:16px}
+    .footer-links-row a{font-family:'Geist Mono',monospace;font-size:11px;color:var(--muted2);text-decoration:none;letter-spacing:.04em;transition:color .15s}
+    .footer-links-row a:hover{color:var(--accent)}
+    .footer-sep{color:var(--border2)}
+    .tech-stack{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+    .tech-pill{font-family:'Geist Mono',monospace;font-size:10px;padding:2px 7px;border-radius:4px;background:var(--surface2);border:1px solid var(--border2);color:var(--muted2);letter-spacing:.06em;transition:background .3s,border-color .3s}
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="site-header">
+  <div class="header-inner">
+    <a class="logo" href="#">
+      <div class="logo-mark">
+        <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M14 11.5a2.5 2.5 0 0 0-2.5-2.5h-.25A4 4 0 1 0 4 11.5H14Z" fill="#0d0f0e" fill-opacity="0.85"/>
+        </svg>
+      </div>
+      <div>
+        <span class="logo-text">CloudMatch</span>
+        <span class="logo-sub">Vendor Intelligence</span>
+      </div>
+    </a>
+    <nav>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="#" class="active">Recommend</a></li>
+        <li><a href="#" onclick="scrollToAnalysis('radar');return false">Compare</a></li>
+        <li><a href="#" onclick="scrollToAnalysis('features');return false">Features</a></li>
+        <li id="loginNavItem"><a href="/login">Login</a></li>
+        <li id="signupNavItem"><a href="/login#signup">Sign Up</a></li>
+      </ul>
+    </nav>
+    <div class="nav-right">
+      <span class="nav-badge">v2.0</span>
+      <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn" title="Toggle light/dark mode">
+        <div class="toggle-track"><div class="toggle-thumb"></div></div>
+        <span class="toggle-label" id="theme-label">Dark</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-eyebrow">Cloud Intelligence System</div>
+  <h1>Find Your <em>Perfect</em><br/>Cloud Vendor</h1>
+  <p>Tell us about your workload. We score AWS, GCP, and Azure against your exact requirements — the three most trusted enterprise cloud platforms.</p>
+  <div class="vendor-strip">
+    <div class="vendor-tab"><div class="vendor-bar" style="background:var(--c-aws)"></div>Amazon AWS</div>
+    <div class="vendor-tab"><div class="vendor-bar" style="background:var(--c-gcp)"></div>Google GCP</div>
+    <div class="vendor-tab"><div class="vendor-bar" style="background:var(--c-azure)"></div>Microsoft Azure</div>
+  </div>
+</section>
+
+<main class="main">
+  <div class="wizard" id="wizard">
+    <div class="wizard-header">
+      <h2>Configure Your Requirements</h2>
+      <p>Describe your workload to receive a tailored vendor recommendation.</p>
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Compute Size</label>
+        <select id="compute-size">
+          <option value="small">Small — 2 vCPU / 4 GB RAM</option>
+          <option value="medium" selected>Medium — 4 vCPU / 16 GB RAM</option>
+          <option value="large">Large — 16 vCPU / 64 GB RAM</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Compute Hours / Month</label>
+        <input type="number" id="compute-hours" value="730" min="1" max="744" />
+      </div>
+      <div class="form-group">
+        <label>Storage (GB)</label>
+        <input type="number" id="storage-gb" value="100" min="1" />
+      </div>
+      <div class="form-group">
+        <label>Network Egress (GB / mo)</label>
+        <input type="number" id="network-gb" value="50" min="0" />
+      </div>
+      <div class="form-group">
+        <label>DB Instances</label>
+        <input type="number" id="db-instances" value="1" min="0" max="20" />
+      </div>
+      <div class="form-group">
+        <label>DB Instance Size</label>
+        <select id="db-size">
+          <option value="small" selected>Small</option>
+          <option value="medium">Medium</option>
+          <option value="large">Large</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Monthly Budget Cap ($)</label>
+        <input type="number" id="max-budget" value="500" min="50" />
+      </div>
+      <div class="form-group">
+        <label>Use Case</label>
+        <select id="use-case">
+          <option value="web">Web Application</option>
+          <option value="ml">ML / AI Workloads</option>
+          <option value="enterprise">Enterprise Software</option>
+          <option value="startup">Startup / MVP</option>
+          <option value="data">Data Analytics</option>
+        </select>
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label>Required Features</label>
+        <div class="checkbox-group" id="feature-pills">
+          <label class="check-pill" data-val="needs_ml"><input type="checkbox"/>Machine Learning</label>
+          <label class="check-pill" data-val="needs_kubernetes"><input type="checkbox"/>Kubernetes</label>
+          <label class="check-pill" data-val="needs_serverless"><input type="checkbox"/>Serverless</label>
+        </div>
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label>Required Compliance</label>
+        <div class="checkbox-group" id="compliance-pills">
+          <label class="check-pill" data-val="HIPAA"><input type="checkbox"/>HIPAA</label>
+          <label class="check-pill" data-val="PCI-DSS"><input type="checkbox"/>PCI-DSS</label>
+          <label class="check-pill" data-val="SOC2"><input type="checkbox"/>SOC 2</label>
+          <label class="check-pill" data-val="GDPR"><input type="checkbox"/>GDPR</label>
+          <label class="check-pill" data-val="FedRAMP"><input type="checkbox"/>FedRAMP</label>
+        </div>
+      </div>
+      <div class="weight-group">
+        <div class="weight-group-label">Priority Weights</div>
+        <div class="weights-grid">
+          <div class="weight-item"><label>Cost <span class="weight-val" id="cost-val">20%</span></label><input type="range" min="5" max="50" value="20" id="w-cost" oninput="updateWeight('cost',this.value)"/></div>
+          <div class="weight-item"><label>Reliability <span class="weight-val" id="reliability-val">20%</span></label><input type="range" min="5" max="50" value="20" id="w-reliability" oninput="updateWeight('reliability',this.value)"/></div>
+          <div class="weight-item"><label>Performance <span class="weight-val" id="performance-val">15%</span></label><input type="range" min="5" max="50" value="15" id="w-performance" oninput="updateWeight('performance',this.value)"/></div>
+          <div class="weight-item"><label>Security <span class="weight-val" id="security-val">15%</span></label><input type="range" min="5" max="50" value="15" id="w-security" oninput="updateWeight('security',this.value)"/></div>
+          <div class="weight-item"><label>Support <span class="weight-val" id="support-val">10%</span></label><input type="range" min="5" max="50" value="10" id="w-support" oninput="updateWeight('support',this.value)"/></div>
+          <div class="weight-item"><label>Innovation <span class="weight-val" id="innovation-val">10%</span></label><input type="range" min="5" max="50" value="10" id="w-innovation" oninput="updateWeight('innovation',this.value)"/></div>
+          <div class="weight-item"><label>Compliance <span class="weight-val" id="compliance-val">10%</span></label><input type="range" min="5" max="50" value="10" id="w-compliance" oninput="updateWeight('compliance',this.value)"/></div>
+        </div>
+      </div>
+    </div>
+    <button class="btn-analyze" id="run-btn" onclick="runRecommendation()">Analyze and Recommend  →</button>
+  </div>
+
+  <div class="loading" id="loading">
+    <div class="loader-track"></div>
+    <p>Scoring vendors against your requirements...</p>
+  </div>
+
+  <div class="results" id="results">
+    <div class="results-header">
+      <h2>Recommendation Results</h2>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <div class="top-badge" id="top-badge">Top Pick: —</div>
+        <button class="export-btn" onclick="exportResults('csv')" title="Download CSV report">⬇ CSV</button>
+        <button class="export-btn" onclick="exportResults('json')" title="Download JSON report">⬇ JSON</button>
+        <span class="pricing-tag" id="pricing-tag"></span>
+      </div>
+    </div>
+    <div class="cards-grid" id="cards-grid"></div>
+    <div class="analysis-section">
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('analysis')">Analysis</button>
+        <button class="tab-btn" onclick="switchTab('radar')">Score Radar</button>
+        <button class="tab-btn" onclick="switchTab('features')">Feature Matrix</button>
+      </div>
+      <div class="tab-content active" id="tab-analysis">
+        <div class="section-title">Why this recommendation?</div>
+        <div id="analysis-items"></div>
+      </div>
+      <div class="tab-content" id="tab-radar">
+        <div class="section-title">Vendor Score Comparison</div>
+        <div class="chart-wrap">
+          <canvas id="radarChart" width="300" height="300"></canvas>
+          <canvas id="barChart" width="300" height="300"></canvas>
+        </div>
+      </div>
+      <div class="tab-content" id="tab-features">
+        <div class="section-title">Feature Matrix</div>
+        <div style="overflow-x:auto"><table class="feature-table" id="feature-table"></table></div>
+      </div>
+    </div>
+    <button class="reset-btn" onclick="resetForm()">Start Over</button>
+  </div>
+</main>
+
+<!-- FOOTER — fixed: removed erroneous extra </div> after vendors-covered column -->
+<footer class="site-footer">
+  <div class="footer-top">
+    <div class="footer-brand">
+      <a class="logo" href="#">
+        <div class="logo-mark">
+          <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M14 11.5a2.5 2.5 0 0 0-2.5-2.5h-.25A4 4 0 1 0 4 11.5H14Z" fill="#0d0f0e" fill-opacity="0.85"/>
+          </svg>
+        </div>
+        <div><span class="logo-text">CloudMatch</span><span class="logo-sub">Vendor Intelligence</span></div>
+      </a>
+      <p>An AI-powered Multi-Criteria Decision Analysis system for optimised cloud vendor selection. Built for enterprise, startup, and academic use cases.</p>
+      <div class="api-status"><div class="status-dot"></div>API v2.0 — Operational</div>
+    </div>
+
+    <div class="footer-col">
+      <h4>Vendors Covered</h4>
+      <div class="footer-vendors">
+        <div class="footer-vendor-item"><div class="fv-dot" style="background:var(--c-aws)"></div>Amazon Web Services</div>
+        <div class="footer-vendor-item"><div class="fv-dot" style="background:var(--c-gcp)"></div>Google Cloud Platform</div>
+        <div class="footer-vendor-item"><div class="fv-dot" style="background:var(--c-azure)"></div>Microsoft Azure</div>
+      </div>
+    </div>
+
+    <div class="footer-col">
+      <h4>Resources</h4>
+      <ul>
+        <li><a href="https://github.com" target="_blank">GitHub Repository</a></li>
+        <li><a href="#" onclick="callEvaluate();return false">Run Evaluation Suite</a></li>
+        <li><a href="http://localhost:5000/api/scenarios" target="_blank">Test Scenarios (JSON)</a></li>
+        <li><a href="http://localhost:5000/api/vendors" target="_blank">Vendor Data (JSON)</a></li>
+        <li><a href="http://localhost:5000/api/health" target="_blank">API Health Check</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-col">
+      <h4>Project Info</h4>
+      <ul>
+        <li><a href="#">Department of Quantum AI</a></li>
+        <li><a href="#">VIT University</a></li>
+        <li><a href="#">Supervisor: Dr. Anil Kumar Kakelli</a></li>
+        <li><a href="#">Academic Year 2024–25</a></li>
+        <li><a href="#">Cloud Computing — BCSE406L</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <hr class="footer-divider"/>
+  <div class="footer-bottom">
+    <span class="footer-copy">&copy; 2025 CloudMatch &nbsp;&mdash;&nbsp; Department of Quantum AI, VIT University</span>
+    <div class="tech-stack">
+      <span class="tech-pill">Python 3.11</span>
+      <span class="tech-pill">Flask 3.0</span>
+      <span class="tech-pill">Chart.js</span>
+      <span class="tech-pill">Vanilla JS</span>
+    </div>
+    <div class="footer-links-row">
+      <a href="https://github.com" target="_blank">GitHub</a>
+      <span class="footer-sep">|</span>
+      <a href="http://localhost:5000/api/health" target="_blank">API</a>
+      <span class="footer-sep">|</span>
+      <a href="#">Report</a>
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+  const API_BASE = window.API_BASE || "http://localhost:5000";
+
+  let isLight = false;
+  function toggleTheme() {
+    isLight = !isLight;
+    document.documentElement.classList.toggle('light', isLight);
+    document.getElementById('theme-label').textContent = isLight ? 'Light' : 'Dark';
+    localStorage.setItem('theme', isLight ? 'light' : 'dark');
+    if (document.getElementById('results').classList.contains('active') && currentRecs)
+      setTimeout(() => { buildRadar(currentRecs); buildBar(currentRecs); }, 50);
+  }
+  (function(){
+    if (localStorage.getItem('theme') === 'light') {
+      isLight = true;
+      document.documentElement.classList.add('light');
+      document.getElementById('theme-label').textContent = 'Light';
+    }
+  })();
+
+async function checkLoggedInUser() {
+  try {
+    const res  = await fetch("/api/auth/user");
+    const data = await res.json();
+    const navLinks = document.querySelector('.nav-links');
+    if (!navLinks) return;
+    if (data.logged_in) {
+      const loginItem  = document.getElementById('loginNavItem');
+      const signupItem = document.getElementById('signupNavItem');
+      if (loginItem)  loginItem.remove();
+      if (signupItem) signupItem.remove();
+      const userLi = document.createElement('li');
+      userLi.innerHTML = `<a href="#" style="color:var(--accent)">👤 ${data.user.name}</a>`;
+      const logoutLi = document.createElement('li');
+      logoutLi.innerHTML = `<a href="#" onclick="logout()">Logout</a>`;
+      navLinks.appendChild(userLi);
+      navLinks.appendChild(logoutLi);
+    }
+  } catch(e) {}
+}
+
+async function logout() {
+  await fetch("/api/auth/logout", { method: "POST" });
+  location.reload();
+}
+  checkLoggedInUser();
+
+  document.querySelectorAll('.check-pill').forEach(pill => {
+    pill.addEventListener('click', (e) => {
+      e.preventDefault();
+      pill.classList.toggle('active');
+      const cb = pill.querySelector('input[type="checkbox"]');
+      if (cb) cb.checked = !cb.checked;
+    });
+  });
+
+  function updateWeight(key, val) { document.getElementById(`${key}-val`).textContent = val + '%'; }
+  function getWeights() {
+    return { cost_weight:+document.getElementById('w-cost').value/100, reliability_weight:+document.getElementById('w-reliability').value/100, performance_weight:+document.getElementById('w-performance').value/100, security_weight:+document.getElementById('w-security').value/100, support_weight:+document.getElementById('w-support').value/100, innovation_weight:+document.getElementById('w-innovation').value/100, compliance_weight:+document.getElementById('w-compliance').value/100 };
+  }
+  function getActivePills(id) { return [...document.querySelectorAll(`#${id} .check-pill.active`)].map(p=>p.dataset.val); }
+  function buildPayload() {
+    return { workload:{ compute_size:document.getElementById('compute-size').value, compute_hours:+document.getElementById('compute-hours').value, storage_gb:+document.getElementById('storage-gb').value, network_gb:+document.getElementById('network-gb').value, db_instances:+document.getElementById('db-instances').value, db_size:document.getElementById('db-size').value }, max_budget:+document.getElementById('max-budget').value, required_compliance:getActivePills('compliance-pills'), needs_ml:getActivePills('feature-pills').includes('needs_ml'), needs_kubernetes:getActivePills('feature-pills').includes('needs_kubernetes'), needs_serverless:getActivePills('feature-pills').includes('needs_serverless'), ...getWeights() };
+  }
+
+  function VMETA() {
+    const g=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+    const a=(hex,al)=>{const r=parseInt(hex.slice(1,3),16),gv=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return `rgba(${r},${gv},${b},${al})`;};
+    return { aws:{color:g('--c-aws'),bg:a(g('--c-aws'),.12),tagline:'Broadest global service catalog'}, gcp:{color:g('--c-gcp'),bg:a(g('--c-gcp'),.12),tagline:'AI-native infrastructure at scale'}, azure:{color:g('--c-azure'),bg:a(g('--c-azure'),.12),tagline:'Enterprise-grade hybrid cloud'} };
+  }
+
+  let currentRecs = null, charts = {};
+
+  async function runRecommendation() {
+    const btn = document.getElementById('run-btn');
+    btn.disabled = true;
+    document.getElementById('wizard').style.display = 'none';
+    document.getElementById('loading').classList.add('active');
+    document.getElementById('results').classList.remove('active');
+    try {
+      const res = await fetch(`${API_BASE}/api/recommend`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(buildPayload())});
+      renderResults(await res.json());
+    } catch { renderResults(generateDemoData()); }
+    finally { btn.disabled=false; document.getElementById('loading').classList.remove('active'); }
+  }
+
+  async function callEvaluate() {
+    try {
+      const res = await fetch(`${API_BASE}/api/evaluate`,{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+      const d = await res.json();
+      alert(`Evaluation complete!\n\nProposed: ${(d.aggregate.proposed.accuracy*100).toFixed(0)}% (${d.aggregate.proposed.correct}/${d.aggregate.proposed.total})\nCheapest: ${(d.aggregate.cheapest.accuracy*100).toFixed(0)}%\nHighest-rated: ${(d.aggregate.highest_rated.accuracy*100).toFixed(0)}%\nRandom: ${(d.aggregate.random.accuracy*100).toFixed(0)}%`);
+    } catch { alert('Backend not running. Start with: python app.py'); }
+  }
+
+  function scrollToAnalysis(tab) {
+    if (document.getElementById('results').classList.contains('active')) {
+      switchTab(tab);
+      document.querySelector('.analysis-section').scrollIntoView({behavior:'smooth'});
+    }
+  }
+
+  function generateDemoData() {
+    const rows=[{vendor:'aws',name:'Amazon Web Services',logo:'AWS',score:8.7,monthly_cost:187.4,strengths:['Widest service catalog','Global reach','Best ML services'],weaknesses:['Complex pricing','Steep learning curve'],features:{regions:31,services:200,sla_uptime:99.99,ml_services:true,kubernetes:true,serverless:true,cdn:true},scores:{reliability:9.5,performance:9.2,security:9.4,support:8.8,innovation:9.6}},{vendor:'gcp',name:'Google Cloud Platform',logo:'GCP',score:8.4,monthly_cost:162.1,strengths:['Best data analytics','Kubernetes native','AI/ML leadership'],weaknesses:['Fewer enterprise features','Smaller ecosystem'],features:{regions:35,services:150,sla_uptime:99.99,ml_services:true,kubernetes:true,serverless:true,cdn:true},scores:{reliability:9.3,performance:9.4,security:9.3,support:8.5,innovation:9.7}},{vendor:'azure',name:'Microsoft Azure',logo:'AZ',score:8.2,monthly_cost:198.6,strengths:['Enterprise integration','Hybrid cloud leader','Strong compliance'],weaknesses:['Complex portal','Pricing complexity'],features:{regions:60,services:200,sla_uptime:99.99,ml_services:true,kubernetes:true,serverless:true,cdn:true},scores:{reliability:9.2,performance:9.0,security:9.6,support:9.1,innovation:9.0}}];
+    rows.sort((a,b)=>b.score-a.score); rows[0].recommended=true;
+    return {success:true,recommendations:rows,top_pick:rows[0].vendor,analysis:{summary:`${rows[0].name} scores highest at ${rows[0].score}/10, est. $${rows[0].monthly_cost}/mo.`,reasoning:['Balanced performance across reliability, security, and cost.','Broad compliance coverage matches requirements.'],trade_offs:[`${rows[1].name} is a close alternative — score ${rows[1].score}/10, $${rows[1].monthly_cost}/mo.`]}};
+  }
+
+  function renderResults(data) {
+    currentRecs = data.recommendations;
+    document.getElementById('results').classList.add('active');
+    document.getElementById('top-badge').textContent = `Top Pick: ${currentRecs[0].name}`;
+    const meta = VMETA();
+    document.getElementById('cards-grid').innerHTML = currentRecs.map((r,i)=>{
+      const m=meta[r.vendor]||{color:'#888',bg:'rgba(255,255,255,.06)',tagline:''};const top=i===0;
+      return `<div class="vendor-card ${top?'top-card':''}"><div class="card-stripe" style="background:${m.color}"></div><div class="card-body"><div class="card-rank-row"><span class="card-rank ${top?'is-top':''}">${top?'Recommended':'Rank #'+(i+1)}</span><span class="vendor-logo-tag" style="background:${m.bg};color:${m.color}">${r.logo}</span></div><div class="card-name">${r.name}</div><div class="card-tagline">${m.tagline}</div><div class="score-block"><div class="score-top-row"><span class="score-lbl">Overall Score</span><span><span class="score-num" style="color:${m.color}">${r.score}</span><span class="score-denom">/10</span></span></div><div class="score-track"><div class="score-fill" style="width:${r.score*10}%;background:${m.color}"></div></div></div><div class="card-tags">${r.strengths.slice(0,2).map(s=>`<span class="tag tag-s">${s}</span>`).join('')}${r.weaknesses.slice(0,1).map(w=>`<span class="tag tag-w">${w}</span>`).join('')}</div><div class="card-footer"><span class="cost-lbl">Est. Monthly</span><div class="cost-amount"><span class="cost-num" style="color:${m.color}">$${Math.round(r.monthly_cost)}</span><span class="cost-sub">per month</span></div></div></div>${top?'<div class="recommend-stripe"></div>':''}</div>`;
+    }).join('');
+    const a=data.analysis;
+    document.getElementById('analysis-items').innerHTML=[a.summary,...a.reasoning,...a.trade_offs].map(t=>`<div class="analysis-item">${t}</div>`).join('');
+    setTimeout(()=>{buildRadar(currentRecs);buildBar(currentRecs);buildFeatureTable(currentRecs);},80);
+    if(data.pricing_source) updatePricingTag(data.pricing_source, data.pricing_updated_at);
+  }
+
+  function chartColors(){return isLight?{tick:'#4a6b56',grid:'rgba(0,0,0,.06)',radarGrid:'rgba(0,0,0,.08)',legend:'#4a6b56'}:{tick:'#556259',grid:'rgba(255,255,255,.04)',radarGrid:'rgba(255,255,255,.05)',legend:'#7a8c82'};}
+
+  function buildRadar(recs){
+    const ctx=document.getElementById('radarChart').getContext('2d');
+    if(charts.radar)charts.radar.destroy();
+    const meta=VMETA(),cc=chartColors();
+    charts.radar=new Chart(ctx,{type:'radar',data:{labels:['Reliability','Performance','Security','Support','Innovation'],datasets:recs.slice(0,3).map(r=>{const m=meta[r.vendor]||{color:'#888'};return{label:r.name,data:Object.values(r.scores),borderColor:m.color,backgroundColor:m.color+'18',borderWidth:1.5,pointBackgroundColor:m.color,pointRadius:3};})},options:{responsive:true,plugins:{legend:{labels:{color:cc.legend,font:{size:11,family:'Geist'}}}},scales:{r:{min:7,max:10,ticks:{color:cc.tick,font:{size:9},backdropColor:'transparent'},grid:{color:cc.radarGrid},pointLabels:{color:cc.legend,font:{size:11,family:'Geist'}}}}}});
+  }
+
+  function buildBar(recs){
+    const ctx=document.getElementById('barChart').getContext('2d');
+    if(charts.bar)charts.bar.destroy();
+    const meta=VMETA(),cc=chartColors();
+    charts.bar=new Chart(ctx,{type:'bar',data:{labels:recs.map(r=>r.logo),datasets:[{label:'Overall Score',data:recs.map(r=>r.score),backgroundColor:recs.map(r=>(meta[r.vendor]||{color:'#888'}).color),borderRadius:5,borderSkipped:false}]},options:{responsive:true,plugins:{legend:{labels:{color:cc.legend,font:{family:'Geist',size:11}}}},scales:{x:{ticks:{color:cc.tick,font:{family:'Geist Mono',size:11}},grid:{color:cc.grid}},y:{min:0,max:10,ticks:{color:cc.tick,font:{family:'Geist Mono',size:11}},grid:{color:cc.grid}}}}});
+  }
+
+  function buildFeatureTable(recs){
+    const feats=['regions','services','sla_uptime','ml_services','kubernetes','serverless','cdn'];
+    const labels={regions:'Regions',services:'Services',sla_uptime:'SLA Uptime',ml_services:'ML Services',kubernetes:'Kubernetes',serverless:'Serverless',cdn:'CDN'};
+    const meta=VMETA();
+    let html=`<thead><tr><th>Feature</th>${recs.map(r=>`<th style="color:${(meta[r.vendor]||{color:'#888'}).color}">${r.logo}</th>`).join('')}</tr></thead><tbody>`;
+    feats.forEach(f=>{html+=`<tr><td>${labels[f]}</td>`;recs.forEach(r=>{const v=r.features[f];html+=typeof v==='boolean'?`<td>${v?'<span class="check-yes">Yes</span>':'<span class="check-no">No</span>'}</td>`:`<td style="font-family:'Geist Mono',monospace;font-size:12px">${v}${f==='sla_uptime'?'%':''}</td>`;});html+='</tr>';});
+    document.getElementById('feature-table').innerHTML=html+'</tbody>';
+  }
+
+  function switchTab(name){
+    const names=['analysis','radar','features'];
+    document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',names[i]===name));
+    document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+    document.getElementById(`tab-${name}`).classList.add('active');
+  }
+
+  function resetForm(){
+    document.getElementById('results').classList.remove('active');
+    document.getElementById('wizard').style.display='block';
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+
+  async function exportResults(format) {
+    if (!currentRecs) { alert('Run a recommendation first.'); return; }
+    const payload = buildPayload();
+    try {
+      const res = await fetch(`${API_BASE}/api/export/${format}`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) { alert('Export failed. Is the backend running?'); return; }
+      const blob = await res.blob();
+      const cd   = res.headers.get('Content-Disposition') || '';
+      const match = cd.match(/filename="?([^"]+)"?/);
+      const fname = match ? match[1] : `cloudmatch_report.${format}`;
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href = url; a.download = fname; a.click();
+      URL.revokeObjectURL(url);
+    } catch { alert('Export failed. Backend may not be running.'); }
+  }
+
+  function updatePricingTag(source, updatedAt) {
+    const tag = document.getElementById('pricing-tag');
+    if (!tag) return;
+    const label = source === 'live' ? '🟢 Live pricing' : '⚪ Baseline pricing';
+    tag.textContent = label;
+    tag.title = updatedAt ? `Updated: ${updatedAt}` : 'Using static baseline prices';
+  }
+</script>
+
+</body>
+</html>
